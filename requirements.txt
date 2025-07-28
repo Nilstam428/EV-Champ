@@ -1,0 +1,15 @@
+fastapi>=0.100.0
+python-dotenv>=1.0.0
+transformers>=4.30.0  # For HuggingFace models
+openai>=1.0.0  # For OpenAI API
+boto3>=1.28.0  # For AWS Bedrock
+pytest>=7.0.0  # For testing
+uvicorn[standard]==0.24.0
+sqlalchemy==2.0.23
+pydantic==2.5.0
+pydantic-settings==2.1.0
+groq==0.4.1
+python-multipart==0.0.6
+python-dotenv==1.0.0
+bcrypt
+passlib
