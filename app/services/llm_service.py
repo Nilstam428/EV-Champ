@@ -28,67 +28,17 @@ class LLMService:
             
             print("🔑 GROQ_API_KEY found, length:", len(settings.GROQ_API_KEY))
             
-            # Check if there are any proxy-related settings in the environment
-            print("🔍 Checking for any proxy-related configurations...")
-            proxy_related_vars = [
-                'HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy', 
-                'ALL_PROXY', 'all_proxy', 'NO_PROXY', 'no_proxy'
-            ]
-            
-            current_proxies = {}
-            for var in proxy_related_vars:
-                if var in os.environ:
-                    current_proxies[var] = os.environ[var]
-                    print(f"   Found {var}: {os.environ[var][:50]}...")
-            
-            if not current_proxies:
-                print("   No proxy environment variables found")
-            
-            # Clean environment approach - temporarily remove proxy settings
-            proxy_vars = ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy', 'ALL_PROXY', 'all_proxy']
-            original_values = {}
-            
-            try:
-                # Save and temporarily clear proxy environment variables
-                print("🌐 Temporarily clearing proxy environment variables...")
-                for var in proxy_vars:
-                    if var in os.environ:
-                        original_values[var] = os.environ[var]
-                        del os.environ[var]
-                        print(f"   Temporarily removed {var}")
-                
-                if not original_values:
-                    print("   No proxy variables to remove")
-                
-                # Also clear any other potentially problematic environment variables
-                other_vars_to_clear = ['REQUESTS_CA_BUNDLE', 'CURL_CA_BUNDLE']
-                other_original_values = {}
-                for var in other_vars_to_clear:
-                    if var in os.environ:
-                        other_original_values[var] = os.environ[var]
-                        del os.environ[var]
-                        print(f"   Temporarily removed {var}")
-                
-                # Try different initialization approaches
-                print("🔄 Attempting client initialization...")
-                self.client = self._try_client_initialization()
-                
-            finally:
-                # Restore original proxy settings
-                print("🔄 Restoring environment variables...")
-                for var, value in original_values.items():
-                    os.environ[var] = value
-                    print(f"   Restored {var}")
-                for var, value in other_original_values.items():
-                    os.environ[var] = value
-                    print(f"   Restored {var}")
-            
             # Set model names
             self.rag_model = getattr(settings, 'RAG_MODEL_NAME', 'llama3-8b-8192')
             self.chat_model = getattr(settings, 'CHAT_MODEL_NAME', 'llama3-8b-8192')
             
             print(f"🤖 RAG Model: {self.rag_model}")
             print(f"💬 Chat Model: {self.chat_model}")
+
+            # --- ADD THIS LINE ---
+            # Actually create and assign the client instance
+            self.client = self._try_client_initialization()
+            # ---------------------
             
             logger.info("LLM Service initialized successfully")
             print("✅ LLM Service initialized successfully")
@@ -100,59 +50,18 @@ class LLMService:
             # Don't raise here - allow graceful degradation
     
     def _try_client_initialization(self) -> Groq:
-        """Try different approaches to initialize the Groq client"""
-        print("🔄 Trying multiple client initialization methods...")
-        
-        # Get clean kwargs without proxy-related parameters
-        def get_clean_kwargs(**kwargs):
-            """Remove any proxy-related or unsupported arguments"""
-            clean_kwargs = {}
-            supported_params = ['api_key', 'timeout', 'max_retries', 'base_url']
+        """Initializes the Groq client directly with the API key."""
+        print("🔄 Initializing Groq client...")
+        try:
+            # Directly create the client with only the API key
+            client = Groq(api_key=settings.GROQ_API_KEY)
             
-            for key, value in kwargs.items():
-                if key in supported_params and value is not None:
-                    clean_kwargs[key] = value
-            
-            print(f"   Clean kwargs: {list(clean_kwargs.keys())}")
-            return clean_kwargs
-        
-        initialization_methods = [
-            # Method 1: Only API key
-            lambda: Groq(**get_clean_kwargs(api_key=settings.GROQ_API_KEY)),
-            
-            # Method 2: API key with timeout
-            lambda: Groq(**get_clean_kwargs(
-                api_key=settings.GROQ_API_KEY,
-                timeout=30.0
-            )),
-            
-            # Method 3: API key with max retries
-            lambda: Groq(**get_clean_kwargs(
-                api_key=settings.GROQ_API_KEY,
-                max_retries=3
-            )),
-            
-            # Method 4: Minimal - just pass api_key directly
-            lambda: Groq(api_key=settings.GROQ_API_KEY),
-        ]
-        
-        last_error = None
-        for i, method in enumerate(initialization_methods):
-            try:
-                print(f"   Trying method {i + 1}...")
-                client = method()
-                logger.info(f"Client initialized using method {i + 1}")
-                print(f"✅ Client initialized successfully using method {i + 1}")
-                return client
-            except Exception as e:
-                last_error = e
-                logger.warning(f"Initialization method {i + 1} failed: {e}")
-                print(f"❌ Method {i + 1} failed: {e}")
-                continue
-        
-        # If all methods fail, raise the last error
-        print("❌ All initialization methods failed!")
-        raise last_error or Exception("All initialization methods failed")
+            print("✅ Client initialized successfully.")
+            return client
+        except Exception as e:
+            # If initialization fails for any reason, report the error
+            print(f"❌ Client initialization failed: {e}")
+            raise e
     
     def _format_chat_history(self, messages: List[Any]) -> List[Dict[str, str]]:
         """Format chat history for Groq API"""
@@ -196,9 +105,9 @@ class LLMService:
         print("🔍 Getting RAG context...")
         print(f"   Query: {query[:50]}...")
         
-        # Mock RAG context for EV Fleet Management
+        # Mock RAG context for EV Champ
         rag_context = """
-        EV Fleet Management Context:
+        EV Champ Context:
         - Electric vehicles require regular battery health monitoring
         - Optimal charging occurs between 20-80% battery level
         - Route planning should consider charging station locations

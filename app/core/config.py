@@ -20,8 +20,8 @@ class Settings(BaseSettings):
     
     # LLM configuration - Groq API
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
-    RAG_MODEL_NAME: str = "llama3-70b-8192"
-    CHAT_MODEL_NAME: str = "llama3-8b-8192"
+    RAG_MODEL_NAME: str = "meta-llama/llama-4-maverick-17b-128e-instruct"
+    CHAT_MODEL_NAME: str = "meta-llama/llama-4-maverick-17b-128e-instruct"
     
     # Legacy fields for backward compatibility (if they exist in .env)
     LLM_PROVIDER: Optional[str] = None
